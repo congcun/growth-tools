@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A/B 测试周期评估器 | 增长专家工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        /* 自定义滑块样式 */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #2563eb;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 pb-12">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-3 tracking-tight">A/B 测试周期与样本量评估</h1>
+            <p class="text-slate-500 max-w-2xl mx-auto text-sm md:text-base">专业增长团队的实验设计基准工具。输入你的业务数据，自动计算达到统计显著性所需的最优时间周期。</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="flex justify-center mb-8">
+            <div class="inline-flex bg-slate-200 rounded-lg p-1">
+                <button id="tab-btn-duration" class="px-6 py-2.5 rounded-md text-sm font-medium transition-all shadow-sm bg-white text-slate-800">周期与样本量评估</button>
+                <button id="tab-btn-significance" class="px-6 py-2.5 rounded-md text-sm font-medium transition-all text-slate-600 hover:text-slate-800">显著性与结果计算</button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div id="view-duration" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Inputs Panel -->
+            <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <h2 class="text-lg font-semibold text-slate-800 mb-6 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    实验参数设置
+                </h2>
+
+                <div class="space-y-8">
+                    <!-- Baseline Rate -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-sm font-medium text-slate-700">基准转化率 (Baseline Rate)</label>
+                            <div class="flex items-center">
+                                <input type="number" id="baseline-input" value="5" min="0.1" max="99" step="0.1" class="w-20 px-2 py-1 text-right border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <span class="ml-2 text-slate-500">%</span>
+                            </div>
+                        </div>
+                        <input type="range" id="baseline-slider" min="0.1" max="50" step="0.1" value="5">
+                        <p class="text-xs text-slate-400 mt-2">实验前该指标的日常水平。基准越低，验证微小提升所需的样本越大。</p>
+                    </div>
+
+                    <!-- MDE -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-sm font-medium text-slate-700">最小可检测效果 (Relative MDE)</label>
+                            <div class="flex items-center">
+                                <input type="number" id="mde-input" value="10" min="0.1" max="100" step="0.1" class="w-20 px-2 py-1 text-right border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <span class="ml-2 text-slate-500">%</span>
+                            </div>
+                        </div>
+                        <input type="range" id="mde-slider" min="1" max="50" step="1" value="10">
+                        <p class="text-xs text-slate-400 mt-2">你期望通过实验证明的相对提升幅度。例如：从5%提升到5.5%，相对提升就是10%。</p>
+                    </div>
+
+                    <!-- Daily Traffic -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-sm font-medium text-slate-700">单组每日流量 (Daily Traffic/Variation)</label>
+                            <input type="number" id="traffic-input" value="5000" min="100" max="1000000" step="100" class="w-32 px-3 py-1.5 text-right border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <input type="range" id="traffic-slider" min="100" max="50000" step="100" value="5000">
+                        <p class="text-xs text-slate-400 mt-2">每天被分配到其中一个特定实验组（如A组或B组）的独立访客数。</p>
+                    </div>
+
+                    <!-- Advanced Settings -->
+                    <div class="pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">统计功效 (Power 1-β)</label>
+                            <select id="power-select" class="w-full pl-3 pr-8 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <option value="0.8">80% (标准)</option>
+                                <option value="0.9">90% (更严谨)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">显著性水平 (Alpha α)</label>
+                            <select id="alpha-select" class="w-full pl-3 pr-8 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <option value="0.05">5% (标准)</option>
+                                <option value="0.01">1% (更严谨)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                <!-- Result Card -->
+                <div class="bg-blue-600 rounded-2xl shadow-lg p-6 sm:p-8 text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-blue-500 rounded-full opacity-50 blur-2xl"></div>
+                    
+                    <h2 class="text-blue-100 text-sm font-medium uppercase tracking-wider mb-8">计算结果</h2>
+                    
+                    <div class="mb-8">
+                        <p class="text-blue-200 text-sm mb-1">单组所需样本量 (Sample Size)</p>
+                        <div class="flex items-baseline gap-2">
+                            <span id="result-sample" class="text-4xl sm:text-5xl font-bold tracking-tight">--</span>
+                            <span class="text-blue-200">人</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p class="text-blue-200 text-sm mb-1">理论所需天数 (Theoretical Days)</p>
+                        <div class="flex items-baseline gap-2">
+                            <span id="result-days" class="text-4xl sm:text-5xl font-bold tracking-tight">--</span>
+                            <span class="text-blue-200">天</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expert Recommendation Card -->
+                <div id="expert-card" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 transition-colors duration-300">
+                    <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span>💡 专家实战建议</span>
+                    </h3>
+                    <div id="expert-message" class="text-slate-700 leading-relaxed font-medium">
+                        --
+                    </div>
+                    <div id="expert-subtext" class="text-sm text-slate-500 mt-3 pt-3 border-t border-slate-100">
+                        --
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Significance Calculator View (Hidden by default) -->
+        <div id="view-significance" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Inputs Panel -->
+            <div class="lg:col-span-7 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+                <h2 class="text-lg font-semibold text-slate-800 mb-6 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    实验数据录入
+                </h2>
+                
+                <div class="space-y-8">
+                    <!-- Control Group -->
+                    <div class="p-5 border border-slate-200 rounded-xl bg-slate-50">
+                        <h3 class="font-medium text-slate-800 mb-4 flex items-center">
+                            <span class="w-2 h-6 bg-slate-400 rounded-sm mr-2"></span> 对照组 (Control A)
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-slate-600 mb-1">访客数 (Visitors)</label>
+                                <input type="number" id="sig-vis-a" value="10000" min="1" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-slate-600 mb-1">转化数 (Conversions)</label>
+                                <input type="number" id="sig-conv-a" value="500" min="0" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Variation Group -->
+                    <div class="p-5 border border-blue-100 rounded-xl bg-blue-50/50">
+                        <h3 class="font-medium text-blue-800 mb-4 flex items-center">
+                            <span class="w-2 h-6 bg-blue-500 rounded-sm mr-2"></span> 实验组 (Variation B)
+                        </h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm text-slate-600 mb-1">访客数 (Visitors)</label>
+                                <input type="number" id="sig-vis-b" value="10000" min="1" class="w-full px-3 py-2 border border-blue-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm text-slate-600 mb-1">转化数 (Conversions)</label>
+                                <input type="number" id="sig-conv-b" value="560" min="0" class="w-full px-3 py-2 border border-blue-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="lg:col-span-5 flex flex-col gap-6">
+                <!-- Result Card -->
+                <div id="sig-result-card" class="bg-slate-50 rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 relative overflow-hidden transition-colors duration-300">
+                    <h2 class="text-slate-500 text-sm font-medium uppercase tracking-wider mb-6">检验结论 (基于95%置信度)</h2>
+                    
+                    <div class="mb-6">
+                        <h3 id="sig-status" class="text-3xl font-bold text-slate-700 mb-2">等待计算</h3>
+                        <p id="sig-status-sub" class="text-sm text-slate-500">输入数据以获取统计结果</p>
+                    </div>
+
+                    <div class="space-y-4 pt-6 border-t border-slate-200/60">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-slate-600 font-medium">相对提升 (Relative Uplift)</span>
+                            <span id="sig-uplift" class="font-bold text-lg text-slate-800">--</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-slate-600 font-medium">P-Value</span>
+                            <span id="sig-pvalue" class="font-mono text-sm text-slate-800 bg-slate-200/50 px-2 py-0.5 rounded">--</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-200/60">
+                            <div class="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                                <p class="text-xs text-slate-500 mb-1">A组 转化率</p>
+                                <p id="sig-rate-a" class="font-semibold text-slate-800 text-lg">--</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                                <p class="text-xs text-slate-500 mb-1">B组 转化率</p>
+                                <p id="sig-rate-b" class="font-semibold text-slate-800 text-lg">--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // DOM Elements
+        const inputs = {
+            baselineSlider: document.getElementById('baseline-slider'),
+            baselineInput: document.getElementById('baseline-input'),
+            mdeSlider: document.getElementById('mde-slider'),
+            mdeInput: document.getElementById('mde-input'),
+            trafficSlider: document.getElementById('traffic-slider'),
+            trafficInput: document.getElementById('traffic-input'),
+            power: document.getElementById('power-select'),
+            alpha: document.getElementById('alpha-select')
+        };
+
+        const outputs = {
+            sample: document.getElementById('result-sample'),
+            days: document.getElementById('result-days'),
+            expertCard: document.getElementById('expert-card'),
+            expertMsg: document.getElementById('expert-message'),
+            expertSub: document.getElementById('expert-subtext')
+        };
+
+        // Tabs DOM
+        const tabs = {
+            btnDuration: document.getElementById('tab-btn-duration'),
+            btnSignificance: document.getElementById('tab-btn-significance'),
+            viewDuration: document.getElementById('view-duration'),
+            viewSignificance: document.getElementById('view-significance')
+        };
+
+        // Significance DOM
+        const sigInputs = {
+            visA: document.getElementById('sig-vis-a'),
+            convA: document.getElementById('sig-conv-a'),
+            visB: document.getElementById('sig-vis-b'),
+            convB: document.getElementById('sig-conv-b')
+        };
+        
+        const sigOutputs = {
+            status: document.getElementById('sig-status'),
+            statusSub: document.getElementById('sig-status-sub'),
+            uplift: document.getElementById('sig-uplift'),
+            pvalue: document.getElementById('sig-pvalue'),
+            rateA: document.getElementById('sig-rate-a'),
+            rateB: document.getElementById('sig-rate-b'),
+            card: document.getElementById('sig-result-card')
+        };
+
+        // Tab Switching Logic
+        tabs.btnDuration.addEventListener('click', () => {
+            tabs.viewDuration.classList.remove('hidden');
+            tabs.viewSignificance.classList.add('hidden');
+            tabs.btnDuration.classList.add('bg-white', 'text-slate-800', 'shadow-sm');
+            tabs.btnDuration.classList.remove('text-slate-600', 'hover:text-slate-800');
+            tabs.btnSignificance.classList.remove('bg-white', 'text-slate-800', 'shadow-sm');
+            tabs.btnSignificance.classList.add('text-slate-600', 'hover:text-slate-800');
+        });
+
+        tabs.btnSignificance.addEventListener('click', () => {
+            tabs.viewSignificance.classList.remove('hidden');
+            tabs.viewDuration.classList.add('hidden');
+            tabs.btnSignificance.classList.add('bg-white', 'text-slate-800', 'shadow-sm');
+            tabs.btnSignificance.classList.remove('text-slate-600', 'hover:text-slate-800');
+            tabs.btnDuration.classList.remove('bg-white', 'text-slate-800', 'shadow-sm');
+            tabs.btnDuration.classList.add('text-slate-600', 'hover:text-slate-800');
+        });
+
+        // Z-scores for standard standard normal distribution
+        const Z_SCORES = {
+            alpha: { '0.05': 1.96, '0.01': 2.576 },
+            power: { '0.8': 0.8416, '0.9': 1.2816 }
+        };
+
+        // Sync Slider and Number Input
+        function syncInputs(slider, input) {
+            slider.addEventListener('input', (e) => {
+                input.value = e.target.value;
+                calculate();
+            });
+            input.addEventListener('input', (e) => {
+                let val = parseFloat(e.target.value);
+                if (val < parseFloat(input.min)) val = input.min;
+                if (val > parseFloat(input.max)) val = input.max;
+                slider.value = val;
+                calculate();
+            });
+        }
+
+        syncInputs(inputs.baselineSlider, inputs.baselineInput);
+        syncInputs(inputs.mdeSlider, inputs.mdeInput);
+        syncInputs(inputs.trafficSlider, inputs.trafficInput);
+        inputs.power.addEventListener('change', calculate);
+        inputs.alpha.addEventListener('change', calculate);
+
+        function calculate() {
+            // Get values
+            const baseline = parseFloat(inputs.baselineInput.value) / 100;
+            const mdeRel = parseFloat(inputs.mdeInput.value) / 100;
+            const dailyTraffic = parseInt(inputs.trafficInput.value);
+            const alpha = inputs.alpha.value;
+            const power = inputs.power.value;
+
+            // Stats math for Two-Sample Proportion Z-Test
+            const p1 = baseline;
+            const p2 = baseline * (1 + mdeRel); // absolute conversion rate of variation
+            const d = Math.abs(p1 - p2);
+            
+            const pooled_p = (p1 + p2) / 2;
+            const z_alpha = Z_SCORES.alpha[alpha];
+            const z_beta = Z_SCORES.power[power];
+
+            // Formula: n = (Z_alpha * sqrt(2*p*(1-p)) + Z_beta * sqrt(p1(1-p1) + p2(1-p2)))^2 / d^2
+            const part1 = z_alpha * Math.sqrt(2 * pooled_p * (1 - pooled_p));
+            const part2 = z_beta * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2));
+            
+            let sampleSize = Math.ceil(Math.pow(part1 + part2, 2) / Math.pow(d, 2));
+            
+            // Handle edge cases
+            if (!isFinite(sampleSize) || sampleSize < 0) sampleSize = 0;
+
+            const days = sampleSize / dailyTraffic;
+
+            // Update UI Numbers
+            outputs.sample.textContent = sampleSize.toLocaleString();
+            outputs.days.textContent = days === 0 ? '--' : days.toFixed(1);
+
+            // Update Expert Recommendation Logic
+            updateExpertUI(days);
+        }
+
+        function updateExpertUI(days) {
+            let msg = "";
+            let sub = "";
+            let cardClass = "bg-white border-slate-200"; // default
+
+            if (days <= 0 || !isFinite(days)) {
+                msg = "请输入有效的业务参数";
+                sub = "等待计算...";
+            } else if (days < 7) {
+                msg = "建议运行 7 天";
+                sub = "理论天数虽短，但必须覆盖一个完整的“自然周”（7天），以抵消用户的星期效应（工作日/周末行为差异）。";
+                cardClass = "bg-green-50 border-green-200";
+            } else if (days <= 14) {
+                msg = "建议运行 14 天 (黄金周期)";
+                sub = "完美覆盖两个自然周。这为数据回落提供了缓冲期，能有效过滤用户刚接触新功能时的“新奇效应”。";
+                cardClass = "bg-emerald-50 border-emerald-200";
+            } else if (days <= 28) {
+                const recommendedDays = Math.ceil(days / 7) * 7; // Round up to nearest week
+                msg = `建议向上取整至 ${recommendedDays} 天`;
+                sub = `需要较长时间收集样本。建议按整周（如 21 天或 28 天）规划，保证数据的平滑完整。`;
+                cardClass = "bg-amber-50 border-amber-200";
+            } else {
+                msg = "⚠️ 风险：周期超过 28 天";
+                sub = "测试周期过长会导致严重的“样本污染”（如用户清理Cookie被重复计算），受外部环境干扰过大。建议：提高单组流量分配、寻找更大的MDE、或放弃此微小改动的测试。";
+                cardClass = "bg-red-50 border-red-200";
+            }
+
+            outputs.expertMsg.innerHTML = msg;
+            outputs.expertSub.innerHTML = sub;
+            outputs.expertCard.className = `rounded-2xl shadow-sm border p-6 sm:p-8 transition-colors duration-300 ${cardClass}`;
+        }
+
+        // Normal CDF Helper for P-value calculation
+        function normalcdf(X) {
+            var T = 1 / (1 + 0.2316419 * Math.abs(X));
+            var D = 0.3989423 * Math.exp(-X * X / 2);
+            var Prob = D * T * (0.3193815 + T * (-0.3565638 + T * (1.781478 + T * (-1.821256 + T * 1.330274))));
+            if (X > 0) {
+                Prob = 1 - Prob;
+            }
+            return Prob;
+        }
+
+        function calculateSignificance() {
+            const visA = parseInt(sigInputs.visA.value);
+            const convA = parseInt(sigInputs.convA.value);
+            const visB = parseInt(sigInputs.visB.value);
+            const convB = parseInt(sigInputs.convB.value);
+
+            // Basic validation
+            if (!visA || !visB || visA <= 0 || visB <= 0 || convA < 0 || convB < 0) {
+                return;
+            }
+
+            const pA = convA / visA;
+            const pB = convB / visB;
+            
+            sigOutputs.rateA.textContent = (pA * 100).toFixed(2) + '%';
+            sigOutputs.rateB.textContent = (pB * 100).toFixed(2) + '%';
+
+            if (pA === 0 && pB === 0) {
+                 sigOutputs.uplift.textContent = '--';
+                 sigOutputs.pvalue.textContent = '--';
+                 return;
+            }
+
+            const uplift = pA > 0 ? ((pB - pA) / pA) : 0;
+            const upliftStr = (uplift > 0 ? '+' : '') + (uplift * 100).toFixed(2) + '%';
+            
+            sigOutputs.uplift.textContent = upliftStr;
+            sigOutputs.uplift.className = `font-bold text-lg ${uplift > 0 ? 'text-emerald-600' : (uplift < 0 ? 'text-red-600' : 'text-slate-800')}`;
+
+            // Z-Test calculation
+            const pooledP = (convA + convB) / (visA + visB);
+            const se = Math.sqrt(pooledP * (1 - pooledP) * (1/visA + 1/visB));
+            
+            let pValue = 1;
+            if (se > 0) {
+                const z = (pB - pA) / se;
+                pValue = 2 * normalcdf(-Math.abs(z)); // Two-tailed p-value
+            }
+
+            sigOutputs.pvalue.textContent = pValue < 0.0001 ? '< 0.0001' : pValue.toFixed(4);
+
+            // UI Update based on Significance Status (Alpha = 0.05)
+            if (pValue <= 0.05) {
+                if (uplift > 0) {
+                    sigOutputs.status.textContent = '显著提升 🎉';
+                    sigOutputs.status.className = 'text-3xl font-bold text-emerald-600 mb-2';
+                    sigOutputs.statusSub.textContent = '实验组表现更好，结果具有统计学意义 (置信度>95%)。';
+                    sigOutputs.card.className = 'bg-emerald-50 rounded-2xl shadow-sm border border-emerald-200 p-6 sm:p-8 relative overflow-hidden transition-colors duration-300';
+                } else {
+                    sigOutputs.status.textContent = '显著下降 ⚠️';
+                    sigOutputs.status.className = 'text-3xl font-bold text-red-600 mb-2';
+                    sigOutputs.statusSub.textContent = '实验组表现显著变差，建议停止或优化。';
+                    sigOutputs.card.className = 'bg-red-50 rounded-2xl shadow-sm border border-red-200 p-6 sm:p-8 relative overflow-hidden transition-colors duration-300';
+                }
+            } else {
+                sigOutputs.status.textContent = '未达显著 ⏳';
+                sigOutputs.status.className = 'text-3xl font-bold text-slate-700 mb-2';
+                sigOutputs.statusSub.textContent = '差异不具备统计学意义，可能由随机误差导致。建议继续观察或扩大样本。';
+                sigOutputs.card.className = 'bg-slate-50 rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 relative overflow-hidden transition-colors duration-300';
+            }
+        }
+
+        // Attach listeners for Significance Calculator
+        Object.values(sigInputs).forEach(input => {
+            input.addEventListener('input', calculateSignificance);
+        });
+
+        // Initialize on load
+        window.onload = () => {
+            calculate();
+            calculateSignificance();
+        };
+    </script>
+</body>
+</html>
